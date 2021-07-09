@@ -15,3 +15,27 @@ application {
     // Define the main class for the application.
     mainClass.set("test.suite.experiment.app.App")
 }
+
+testSuites {
+    val integrationTest by registering {
+        sources {
+            java {
+                srcDir("src/foo")
+            }
+        }
+
+        dependencies {
+            // implementation("foo:bar")
+            // runtimeOnly("org:log4j")
+        }
+
+        targets {
+            // BinaryCollection is an uglier named domain object collection
+            getByName("java8").configure {
+                testTask.configure {
+                    systemProperty("FOO", "foobar")
+                }
+            }
+        }
+    }
+}

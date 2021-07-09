@@ -11,6 +11,7 @@ import org.gradle.example.testsuites.ComponentDependencies;
 import org.gradle.example.testsuites.JvmTestSuite;
 import org.gradle.example.testsuites.JvmTestSuiteTarget;
 import org.gradle.internal.Cast;
+import org.gradle.language.BinaryCollection;
 import org.gradle.language.internal.DefaultBinaryCollection;
 
 import javax.inject.Inject;
@@ -19,22 +20,31 @@ public abstract class DefaultJvmTestSuite implements JvmTestSuite {
     private final ComponentDependencies dependencies;
     private final DefaultBinaryCollection<JvmTestSuiteTarget> targets;
     private final SourceSet sourceSet;
+    private final String name;
 
     @Inject
-    public DefaultJvmTestSuite(ObjectFactory objectFactory, SourceSetContainer sourceSets, ConfigurationContainer configurations) {
+    public DefaultJvmTestSuite(String name, SourceSetContainer sourceSets, ConfigurationContainer configurations) {
+        this.name = name;
         this.sourceSet = sourceSets.create(getName());
-        getSources().from(sourceSet.getAllJava());
         Configuration compileOnly = configurations.getByName(sourceSet.getCompileOnlyConfigurationName());
         Configuration implementation = configurations.getByName(sourceSet.getImplementationConfigurationName());
         Configuration runtimeOnly = configurations.getByName(sourceSet.getRuntimeOnlyConfigurationName());
-        this.dependencies = objectFactory.newInstance(DefaultComponentDependencies.class, implementation, compileOnly, runtimeOnly);
-        this.targets = Cast.uncheckedCast(objectFactory.newInstance(DefaultBinaryCollection.class, JvmTestSuiteTarget.class));
+        this.dependencies = getObjectFactory().newInstance(DefaultComponentDependencies.class, implementation, compileOnly, runtimeOnly);
+        this.targets = Cast.uncheckedCast(getObjectFactory().newInstance(DefaultBinaryCollection.class, JvmTestSuiteTarget.class));
+    }
+
+    @Override
+    public String getName() {
+        return name;
     }
 
     @Inject
-    abstract ObjectFactory getObjectFactory();
+    public abstract ObjectFactory getObjectFactory();
 
-    public void sources(Action<? super ConfigurableFileCollection> configuration) {
+    public SourceSet getSources() {
+        return sourceSet;
+    }
+    public void sources(Action<? super SourceSet> configuration) {
         configuration.execute(getSources());
     }
 
@@ -48,9 +58,12 @@ public abstract class DefaultJvmTestSuite implements JvmTestSuite {
     public DefaultBinaryCollection<JvmTestSuiteTarget> getTargets() {
         return targets;
     }
+    public void targets(Action<BinaryCollection<? extends JvmTestSuiteTarget>> configuration) {
+        configuration.execute(targets);
+    }
 
-    public void addTestTarget() {
-        DefaultJvmTestSuiteTarget defaultJvmTestSuiteTarget = getObjectFactory().newInstance(DefaultJvmTestSuiteTarget.class);
+    public void addTestTarget(String target) {
+        DefaultJvmTestSuiteTarget defaultJvmTestSuiteTarget = getObjectFactory().newInstance(DefaultJvmTestSuiteTarget.class, target);
         defaultJvmTestSuiteTarget.getTestClasses().from(sourceSet.getOutput().getClassesDirs());
         defaultJvmTestSuiteTarget.getRuntimeClasspath().from(sourceSet.getRuntimeClasspath());
         targets.add(defaultJvmTestSuiteTarget);
