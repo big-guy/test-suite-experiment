@@ -11,3 +11,12 @@ repositories {
     // Use the plugin portal to apply community plugins in convention plugins.
     gradlePluginPortal()
 }
+
+gradlePlugin {
+    plugins {
+        create("testSuitePlugin") {
+            id = "testsuites"
+            implementationClass = "org.gradle.example.testsuites.TestSuitePlugin"
+        }
+    }
+}
